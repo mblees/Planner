@@ -222,6 +222,93 @@ fun FoodMenu(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MoneyMenu(
+    modifier: Modifier = Modifier,
+    onButtonClicked: (String) -> Unit = {}
+) {
+    var category by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf("") }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp) // Add padding to the column
+    ) {
+        TextField(
+            value = category,
+            onValueChange = { category = it },
+            label = { Text("Wofür hast du Geld ausgegeben?") }
+        )
+        TextField(
+            value = amount,
+            onValueChange = { amount = it },
+            label = { Text("Preis in €") }
+        )
+        Button(
+            onClick = {onButtonClicked("Daten senden")},
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+        ) {
+            Text("Daten senden")
+        }
+        Button(
+            onClick = { onButtonClicked("Start Menu") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+        ) {
+            Text("Start Menu")
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GymMenu(
+    modifier: Modifier = Modifier,
+    onButtonClicked: (String) -> Unit = {}
+) {
+    var type_workout by remember { mutableStateOf("") }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp) // Add padding to the column
+    ) {
+        TextField(
+            value = type_workout,
+            onValueChange = { type_workout = it },
+            label = { Text("Was trainierst du heute?") }
+        )
+        Button(
+            onClick = {onButtonClicked("Workout starten")},
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Text("Workout starten")
+        }
+
+        Button(
+            onClick = {onButtonClicked("Workout beenden")},
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Text("Workout beenden")
+        }
+        Button(
+            onClick = { onButtonClicked("Start Menu") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+        ) {
+            Text("Start Menu")
+        }
+    }
+}
+
 
 @Composable
 fun StartMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {}) {
@@ -288,6 +375,14 @@ fun MainScreen() {
             }
 
             "Essen" -> FoodMenu { action ->
+                currentScreen = action
+            }
+
+            "Geld" -> MoneyMenu { action ->
+                currentScreen = action
+            }
+
+            "Gym" -> GymMenu { action ->
                 currentScreen = action
             }
         }
