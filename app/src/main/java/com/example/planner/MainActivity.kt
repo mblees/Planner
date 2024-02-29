@@ -38,12 +38,12 @@ class MainActivity : ComponentActivity() {
 fun HygieneMenu(modifier: Modifier = Modifier) {
     // List of hygiene tasks
     val hygieneTasks = listOf(
-        "Wash hands",
-        "Brush teeth",
-        "Take a shower",
-        "Cut nails",
-        "Clean ears",
-        "Wash face"
+        "Skincare",
+        "Rasieren",
+        "Duschen",
+        "Zähneputzen Morgens",
+        "Zähneputzen Abends",
+        "Nägel schneiden"
         // Add more tasks as needed
     )
 
@@ -81,6 +81,57 @@ fun HygieneMenu(modifier: Modifier = Modifier) {
     }
 }
 
+
+@Composable
+fun GymPreparationMenu(modifier: Modifier = Modifier) {
+    // List of thigs that need to be brought
+    val gymChecklist = listOf(
+        "Kopfhörer",
+        "Unterwäsche",
+        "Trainingskleider",
+        "frische Kleider",
+        "Duschgel",
+        "Handtuch",
+        "Wasserflasche",
+        "Chipkarte"
+        // Add more tasks as needed
+    )
+
+    // State to hold the checked status of each task
+    val checkedTasks = remember { mutableStateOf(List(gymChecklist.size) { false }) }
+
+    LazyColumn(modifier = modifier) {
+        items(gymChecklist) { task ->
+            val index = gymChecklist.indexOf(task)
+            val isChecked = checkedTasks.value[index]
+
+            // Row to align checkbox and text
+            Row(
+                modifier = Modifier.padding(horizontal = 0.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Checkbox to mark task as done
+                Checkbox(
+                    checked = isChecked,
+                    onCheckedChange = { checked ->
+                        checkedTasks.value = checkedTasks.value.toMutableList().also {
+                            it[index] = checked
+                        }
+                    },
+                    modifier = Modifier.padding(16.dp)
+                )
+
+                // Display the task
+                Text(
+                    text = task,
+                    modifier = Modifier.padding(end = 16.dp, top = 29.dp)
+                )
+            }
+        }
+    }
+}
+
+
 @Composable
 fun StartMenu(modifier: Modifier = Modifier, onButtonClicked : (String) -> Unit = {}) {
     Column(
@@ -117,11 +168,11 @@ fun StartMenu(modifier: Modifier = Modifier, onButtonClicked : (String) -> Unit 
             Text("Gym")
         }
         Button(
-            onClick = { onButtonClicked("Uni") },
+            onClick = { onButtonClicked("Gym Checklist") },
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            Text("Uni")
+            Text("Gym Checklist")
         }
     }
 }
@@ -129,10 +180,10 @@ fun StartMenu(modifier: Modifier = Modifier, onButtonClicked : (String) -> Unit 
 
 @Composable
 fun MainScreen() {
-    var currentScreen by remember { mutableStateOf("Menu") }
+    var currentScreen by remember { mutableStateOf("Start Menu") }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        if (currentScreen != "Hygiene") {
+        if (currentScreen == "Start Menu") {
             StartMenu { action ->
                 currentScreen = action
             }
@@ -140,6 +191,7 @@ fun MainScreen() {
 
         when (currentScreen) {
             "Hygiene" -> HygieneMenu(modifier = Modifier.fillMaxSize())
+            "Gym Checklist" -> GymPreparationMenu(modifier = Modifier.fillMaxSize())
         }
     }
 }
