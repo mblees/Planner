@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,16 +23,43 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextField
 
+import android.content.Context
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val influxDBConfig = getInfluxDBConfig(this)
+        val serverUrl = influxDBConfig["serverUrl"]
+        val databaseName = influxDBConfig["databaseName"]
+        val username = influxDBConfig["username"]
+        val password = influxDBConfig["password"]
+
         setContent {
             PlannerTheme {
                 MainScreen()
             }
         }
     }
+}
+
+fun getInfluxDBConfig(context: Context): Map<String, String> {
+    val influxDBConfig = mutableMapOf<String, String>()
+
+    // Access resources
+    val serverUrl = context.getString(R.string.serverURL)
+    val databaseName = context.getString(R.string.databaseName)
+    val username = context.getString(R.string.username)
+    val password = context.getString(R.string.password)
+
+    // Populate the map
+    influxDBConfig["serverUrl"] = serverUrl
+    influxDBConfig["databaseName"] = databaseName
+    influxDBConfig["username"] = username
+    influxDBConfig["password"] = password
+
+    return influxDBConfig
 }
 
 @Composable
@@ -169,10 +195,7 @@ fun HygieneMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FoodMenu(
-    modifier: Modifier = Modifier,
-    onButtonClicked: (String) -> Unit = {}
-) {
+fun FoodMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {}) {
     var calories by remember { mutableStateOf("") }
     var protein by remember { mutableStateOf("") }
     var carbs by remember { mutableStateOf("") }
@@ -224,10 +247,7 @@ fun FoodMenu(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MoneyMenu(
-    modifier: Modifier = Modifier,
-    onButtonClicked: (String) -> Unit = {}
-) {
+fun MoneyMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {}) {
     var category by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
 
@@ -267,11 +287,8 @@ fun MoneyMenu(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GymMenu(
-    modifier: Modifier = Modifier,
-    onButtonClicked: (String) -> Unit = {}
-) {
-    var type_workout by remember { mutableStateOf("") }
+fun GymMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {}) {
+    var typeWorkout by remember { mutableStateOf("") }
 
     Column(
         modifier = modifier
@@ -279,8 +296,8 @@ fun GymMenu(
             .padding(16.dp) // Add padding to the column
     ) {
         TextField(
-            value = type_workout,
-            onValueChange = { type_workout = it },
+            value = typeWorkout,
+            onValueChange = { typeWorkout = it },
             label = { Text("Was trainierst du heute?") }
         )
         Button(
@@ -386,22 +403,5 @@ fun MainScreen() {
                 currentScreen = action
             }
         }
-    }
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    PlannerTheme {
-        StartMenu {}
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HygieneMenuPreview() {
-    PlannerTheme {
-        HygieneMenu()
     }
 }
