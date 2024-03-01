@@ -64,5 +64,5 @@ dependencies {
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
 
-    implementation("org.influxdb:influxdb-java:2.23")
+    implementation "com.influxdb:influxdb-client-kotlin:7.0.0"
 }
