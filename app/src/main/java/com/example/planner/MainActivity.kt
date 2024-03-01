@@ -1,6 +1,7 @@
 package com.example.planner
 
 import com.example.planner.ui.theme.PlannerTheme
+
 import android.os.Bundle
 
 import androidx.activity.ComponentActivity
@@ -22,19 +23,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextField
-
-import android.content.Context
+import com.influxdb.client.domain.WritePrecision
+import com.influxdb.client.kotlin.InfluxDBClientKotlinFactory
+import com.influxdb.client.write.Point
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import java.time.Instant
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val influxDBConfig = getInfluxDBConfig(this)
-        val serverUrl = influxDBConfig["serverUrl"]
-        val databaseName = influxDBConfig["databaseName"]
-        val username = influxDBConfig["username"]
-        val password = influxDBConfig["password"]
 
         setContent {
             PlannerTheme {
@@ -42,24 +42,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
-
-fun getInfluxDBConfig(context: Context): Map<String, String> {
-    val influxDBConfig = mutableMapOf<String, String>()
-
-    // Access resources
-    val serverUrl = context.getString(R.string.serverURL)
-    val databaseName = context.getString(R.string.databaseName)
-    val username = context.getString(R.string.username)
-    val password = context.getString(R.string.password)
-
-    // Populate the map
-    influxDBConfig["serverUrl"] = serverUrl
-    influxDBConfig["databaseName"] = databaseName
-    influxDBConfig["username"] = username
-    influxDBConfig["password"] = password
-
-    return influxDBConfig
 }
 
 @Composable
@@ -327,6 +309,7 @@ fun GymMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {
 }
 
 
+@OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun StartMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {}) {
     Column(
@@ -369,6 +352,18 @@ fun StartMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit =
         ) {
             Text("Gym Checklist")
         }
+        Button(
+            onClick = {
+                // Call the connectInfluxDB function when the button is clicked
+                GlobalScope.launch {
+                    connectInfluxDB()
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Text("Connect to InfluxDB")
+        }
     }
 }
 
@@ -403,5 +398,24 @@ fun MainScreen() {
                 currentScreen = action
             }
         }
+    }
+}
+
+suspend fun connectInfluxDB(){
+    val token = "E297d7E9DQ8HtitYgfhJyZ0pRcNUUuHETnHWWGta_rXLfST1De_aTt6L4FgORkVRo1u5tpohutP_rHW-lrduWg=="
+    val org = "Planer"
+    val bucket = "KotlinAppDev"
+
+    val client = InfluxDBClientKotlinFactory.create("https://eu-central-1-1.aws.cloud2.influxdata.com", token.toCharArray(), org, bucket)
+
+    client.use { influxDBClient ->
+        val writeApi = influxDBClient.getWriteKotlinApi()
+
+        val point = Point
+            .measurement("test")
+            .addField("calories", 2450)
+            .time(Instant.now(), WritePrecision.NS)
+
+        writeApi.writePoint(point)
     }
 }
