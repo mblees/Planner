@@ -3,6 +3,7 @@ package com.example.planner
 import com.example.planner.ui.theme.PlannerTheme
 
 import android.os.Bundle
+import android.util.Log
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,18 +25,23 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextField
 import com.influxdb.client.domain.WritePrecision
+import com.influxdb.client.kotlin.InfluxDBClientKotlin
 import com.influxdb.client.kotlin.InfluxDBClientKotlinFactory
 import com.influxdb.client.write.Point
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        Log.i("onCreate", "Started the App")
+        dailyTask()
         setContent {
             PlannerTheme {
                 MainScreen()
@@ -175,7 +181,7 @@ fun HygieneMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
 fun FoodMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {}) {
     var calories by remember { mutableStateOf("") }
@@ -209,7 +215,14 @@ fun FoodMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = 
             label = { Text("Fat") }
         )
         Button(
-            onClick = {onButtonClicked("Daten senden")},
+            onClick = {
+                GlobalScope.launch {
+                    sendDataPoint("food", "calories", calories.safeToLong())
+                    sendDataPoint("food", "protein", protein.safeToLong())
+                    sendDataPoint("food", "carbs", carbs.safeToLong())
+                    sendDataPoint("food", "fat", fat.safeToLong())
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp)
@@ -249,7 +262,7 @@ fun MoneyMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit =
             label = { Text("Preis in €") }
         )
         Button(
-            onClick = {onButtonClicked("Daten senden")},
+            onClick = { onButtonClicked("Daten senden") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp)
@@ -283,7 +296,7 @@ fun GymMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {
             label = { Text("Was trainierst du heute?") }
         )
         Button(
-            onClick = {onButtonClicked("Workout starten")},
+            onClick = { onButtonClicked("Workout starten") },
             modifier = Modifier
                 .fillMaxWidth()
         ) {
@@ -291,7 +304,7 @@ fun GymMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {
         }
 
         Button(
-            onClick = {onButtonClicked("Workout beenden")},
+            onClick = { onButtonClicked("Workout beenden") },
             modifier = Modifier
                 .fillMaxWidth()
         ) {
@@ -352,18 +365,6 @@ fun StartMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit =
         ) {
             Text("Gym Checklist")
         }
-        Button(
-            onClick = {
-                // Call the connectInfluxDB function when the button is clicked
-                GlobalScope.launch {
-                    connectInfluxDB()
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Text("Connect to InfluxDB")
-        }
     }
 }
 
@@ -401,21 +402,102 @@ fun MainScreen() {
     }
 }
 
-suspend fun connectInfluxDB(){
-    val token = "E297d7E9DQ8HtitYgfhJyZ0pRcNUUuHETnHWWGta_rXLfST1De_aTt6L4FgORkVRo1u5tpohutP_rHW-lrduWg=="
+fun connectInfluxDB(): InfluxDBClientKotlin {
+    val token =
+        "E297d7E9DQ8HtitYgfhJyZ0pRcNUUuHETnHWWGta_rXLfST1De_aTt6L4FgORkVRo1u5tpohutP_rHW-lrduWg=="
     val org = "Planer"
     val bucket = "KotlinAppDev"
 
-    val client = InfluxDBClientKotlinFactory.create("https://eu-central-1-1.aws.cloud2.influxdata.com", token.toCharArray(), org, bucket)
+    return InfluxDBClientKotlinFactory.create(
+        "https://eu-central-1-1.aws.cloud2.influxdata.com",
+        token.toCharArray(),
+        org,
+        bucket
+    )
+}
 
-    client.use { influxDBClient ->
-        val writeApi = influxDBClient.getWriteKotlinApi()
+suspend fun sendDataPoint(measurement: String, field: String, value: Long?){
+    val client = connectInfluxDB()
 
-        val point = Point
-            .measurement("test")
-            .addField("calories", 2450)
-            .time(Instant.now(), WritePrecision.NS)
+    if(value != null){
+        client.use { influxDBClient ->
+            val writeApi = influxDBClient.getWriteKotlinApi()
 
-        writeApi.writePoint(point)
+            val point = Point
+                .measurement(measurement)
+                .addField(field, value)
+                .time(Instant.now(), WritePrecision.NS)
+
+            writeApi.writePoint(point)
+        }
     }
+
+    client.close()
+}
+
+fun String.safeToLong(): Long? {
+    return if (isEmpty() || all { it.isDigit() }) {
+        if (isEmpty()) null else toLong()
+    } else {
+        null
+    }
+}
+
+fun dailyTask() {
+    // Create a scheduled executor service with a single thread
+    val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+
+    // Define the time of day when you want your task to execute
+    val desiredHour = 13 // Change this to your desired hour (24-hour format)
+    val desiredMinute = 21 // Change this to your desired minute
+
+    // Get the current time
+    val currentTime = System.currentTimeMillis() + 3600000 //+1 hour to adjust to German time
+
+    // Calculate the delay until the next execution time
+    val currentHour = ((currentTime / 3600000) % 24).toInt() // milliseconds to hours
+    val currentMinute = ((currentTime / 60000) % 60).toInt() // milliseconds to minutes
+
+    println("current hour $currentHour")
+    println("current minute $currentMinute")
+
+    var delayHours = 0
+    var delayMinutes = 0
+
+    if (currentHour > desiredHour || (currentHour == desiredHour && currentMinute >= desiredMinute)) {
+        // If the current time has already passed the desired time today,
+        // schedule the task for the next day
+        delayHours = 24 - currentHour + desiredHour
+        delayMinutes = 60 - currentMinute + desiredMinute
+        println("Task Scheduled for next Day")
+    } else {
+        delayHours = desiredHour - currentHour
+        if (currentMinute > desiredMinute) {
+            delayHours -= 1
+            delayMinutes = 60 - currentMinute + desiredMinute
+        } else {
+            delayMinutes = desiredMinute - currentMinute
+        }
+        println("Task Scheduled for Today")
+    }
+
+    // Calculate the total delay in milliseconds until the next execution
+    val initialDelay = delayHours * 3600000 + delayMinutes * 60000 // hours to milliseconds, minutes to milliseconds
+
+    println("Initialized Scheduled Executor")
+    println("First execution in ${delayHours.toString()} Hours")
+    println("First execution in ${delayMinutes.toString()} Minutes")
+    println("First execution in ${initialDelay.toString()} Milliseconds")
+
+    // Schedule the task to execute daily at the desired time
+    executor.scheduleAtFixedRate({
+        // Define the task you want to execute
+        println("Task executed at ${System.currentTimeMillis()}")
+    }, initialDelay.toLong(), 24 * 3600000, TimeUnit.MILLISECONDS) // 24 hours in milliseconds
+
+    // Add a shutdown hook to gracefully shutdown the executor service when the application terminates
+    Runtime.getRuntime().addShutdownHook(Thread {
+        executor.shutdown()
+        println("Executor service shutdown")
+    })
 }
