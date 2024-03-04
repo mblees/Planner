@@ -253,7 +253,7 @@ fun MoneyMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit =
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
 fun GymMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {}) {
     val chestDay = listOf(
@@ -294,7 +294,11 @@ fun GymMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {
         else -> emptyList()
     }
 
+    // Map to store exercise values
+    var exerciseValues by remember { mutableStateOf(mapOf<String, String>()) }
+
     var isDropdownExpanded by remember { mutableStateOf(false) }
+
 
     Column(
         modifier = modifier
@@ -331,12 +335,28 @@ fun GymMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {
             }
         }
 
+        // Display text fields for each exercise
         exercises.forEach { exercise ->
-            TextField(value = "", onValueChange = {}, label = { Text(exercise) })
+            TextField(
+                value = exerciseValues[exercise] ?: "",
+                onValueChange = { newValue ->
+                    exerciseValues = exerciseValues + (exercise to newValue)
+                },
+                label = { Text(exercise) }
+            )
         }
 
         Button(
-            onClick = { onButtonClicked("Daten senden") },
+            onClick = {
+                // Sending data points for all exercises
+                GlobalScope.launch {
+                    exercises.forEach { exercise ->
+                        val value = exerciseValues[exercise] ?: ""
+                        // Send data point for each exercise
+                        sendDataPoint(selectedTrainingDay.toString(), exercise, value.safeToLong())
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp)
@@ -354,6 +374,7 @@ fun GymMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {
         }
     }
 }
+
 
 @Composable
 fun StartMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {}) {
