@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 
 import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,8 +23,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextField
+import androidx.compose.ui.Alignment
 import com.influxdb.client.domain.WritePrecision
 import com.influxdb.client.kotlin.InfluxDBClientKotlin
 import com.influxdb.client.kotlin.InfluxDBClientKotlinFactory
@@ -80,26 +84,22 @@ fun GymPreparationMenu(modifier: Modifier = Modifier, onButtonClicked: (String) 
             ) {
                 // Checkbox to mark task as done
                 Checkbox(
-                    checked = isChecked,
-                    onCheckedChange = { checked ->
+                    checked = isChecked, onCheckedChange = { checked ->
                         checkedTasks.value = checkedTasks.value.toMutableList().also {
                             it[index] = checked
                         }
-                    },
-                    modifier = Modifier.padding(8.dp)
+                    }, modifier = Modifier.padding(8.dp)
                 )
 
                 // Display the task
                 Text(
-                    text = task,
-                    modifier = Modifier.padding(end = 16.dp, top = 29.dp)
+                    text = task, modifier = Modifier.padding(end = 16.dp, top = 29.dp)
                 )
             }
             if (index == gymChecklist.size - 1) {
                 Button(
                     onClick = { onButtonClicked("Daten senden") },
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Daten senden")
                 }
@@ -145,26 +145,22 @@ fun HygieneMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit
             ) {
                 // Checkbox to mark task as done
                 Checkbox(
-                    checked = isChecked,
-                    onCheckedChange = { checked ->
+                    checked = isChecked, onCheckedChange = { checked ->
                         checkedTasks.value = checkedTasks.value.toMutableList().also {
                             it[index] = checked
                         }
-                    },
-                    modifier = Modifier.padding(8.dp)
+                    }, modifier = Modifier.padding(8.dp)
                 )
 
                 // Display the task
                 Text(
-                    text = task,
-                    modifier = Modifier.padding(end = 16.dp, top = 30.dp)
+                    text = task, modifier = Modifier.padding(end = 16.dp, top = 30.dp)
                 )
             }
             if (index == hygieneTasks.size - 1) {
                 Button(
                     onClick = { onButtonClicked("Daten senden") },
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Daten senden")
                 }
@@ -194,26 +190,10 @@ fun FoodMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = 
             .fillMaxSize()
             .padding(16.dp) // Add padding to the column
     ) {
-        TextField(
-            value = calories,
-            onValueChange = { calories = it },
-            label = { Text("Calories") }
-        )
-        TextField(
-            value = protein,
-            onValueChange = { protein = it },
-            label = { Text("Protein") }
-        )
-        TextField(
-            value = carbs,
-            onValueChange = { carbs = it },
-            label = { Text("Carbs") }
-        )
-        TextField(
-            value = fat,
-            onValueChange = { fat = it },
-            label = { Text("Fat") }
-        )
+        TextField(value = calories, onValueChange = { calories = it }, label = { Text("Calories") })
+        TextField(value = protein, onValueChange = { protein = it }, label = { Text("Protein") })
+        TextField(value = carbs, onValueChange = { carbs = it }, label = { Text("Carbs") })
+        TextField(value = fat, onValueChange = { fat = it }, label = { Text("Fat") })
         Button(
             onClick = {
                 GlobalScope.launch {
@@ -222,8 +202,7 @@ fun FoodMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = 
                     sendDataPoint("food", "carbs", carbs.safeToLong())
                     sendDataPoint("food", "fat", fat.safeToLong())
                 }
-            },
-            modifier = Modifier
+            }, modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp)
         ) {
@@ -251,16 +230,10 @@ fun MoneyMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit =
             .fillMaxSize()
             .padding(16.dp) // Add padding to the column
     ) {
-        TextField(
-            value = category,
+        TextField(value = category,
             onValueChange = { category = it },
-            label = { Text("Wofür hast du Geld ausgegeben?") }
-        )
-        TextField(
-            value = amount,
-            onValueChange = { amount = it },
-            label = { Text("Preis in €") }
-        )
+            label = { Text("Wofür hast du Geld ausgegeben?") })
+        TextField(value = amount, onValueChange = { amount = it }, label = { Text("Preis in €") })
         Button(
             onClick = { onButtonClicked("Daten senden") },
             modifier = Modifier
@@ -283,33 +256,94 @@ fun MoneyMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit =
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GymMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {}) {
-    var typeWorkout by remember { mutableStateOf("") }
+    val chestDay = listOf(
+        "Bankdrücken",
+        "Seitheben",
+        "Trizeps Pulldown",
+        "Flys Machine",
+        "Trizeps hinter Kopf",
+        "Flys Kabelturm",
+        "Schulterpresse"
+    )
+
+    val backDay = listOf(
+        "Latzug",
+        "Bizeps Kabelturm",
+        "Rudern Machine",
+        "Reverse Flys Machine",
+        "Bizepscurls SZ-Stange",
+        "Lat Pulls Kabelturm"
+    )
+
+    val legDay = listOf(
+        "Beinpresse",
+        "Beinbeuger",
+        "Beinstrecker",
+        "Wadenheben",
+        "Situps",
+        "Plank",
+        "Plank seitlich"
+    )
+
+    var selectedTrainingDay by remember { mutableStateOf<String?>(null) }
+
+    val exercises = when (selectedTrainingDay) {
+        "Chest" -> chestDay
+        "Back" -> backDay
+        "Legs" -> legDay
+        else -> emptyList()
+    }
+
+    var isDropdownExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp) // Add padding to the column
+            .padding(8.dp) // Add padding to the column
     ) {
-        TextField(
-            value = typeWorkout,
-            onValueChange = { typeWorkout = it },
-            label = { Text("Was trainierst du heute?") }
-        )
-        Button(
-            onClick = { onButtonClicked("Workout starten") },
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Text("Workout starten")
+        Box {
+            Button(
+                onClick = { isDropdownExpanded = !isDropdownExpanded },
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                Text(selectedTrainingDay ?: "Choose Training Day")
+            }
+
+            if (isDropdownExpanded) {
+                DropdownMenu(
+                    expanded = isDropdownExpanded,
+                    onDismissRequest = { isDropdownExpanded = false },
+                    modifier = Modifier.align(Alignment.TopStart)
+                ) {
+                    DropdownMenuItem(text = { Text("Chest Day") }, onClick = {
+                        selectedTrainingDay = "Chest"
+                        isDropdownExpanded = false
+                    })
+                    DropdownMenuItem(text = { Text("Back Day") }, onClick = {
+                        selectedTrainingDay = "Back"
+                        isDropdownExpanded = false
+                    })
+                    DropdownMenuItem(text = { Text("Leg Day") }, onClick = {
+                        selectedTrainingDay = "Legs"
+                        isDropdownExpanded = false
+                    })
+                }
+            }
+        }
+
+        exercises.forEach { exercise ->
+            TextField(value = "", onValueChange = {}, label = { Text(exercise) })
         }
 
         Button(
-            onClick = { onButtonClicked("Workout beenden") },
+            onClick = { onButtonClicked("Daten senden") },
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(vertical = 16.dp)
         ) {
-            Text("Workout beenden")
+            Text("Daten senden")
         }
+
         Button(
             onClick = { onButtonClicked("Start Menu") },
             modifier = Modifier
@@ -321,8 +355,6 @@ fun GymMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {
     }
 }
 
-
-@OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun StartMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit = {}) {
     Column(
@@ -331,37 +363,27 @@ fun StartMenu(modifier: Modifier = Modifier, onButtonClicked: (String) -> Unit =
             .padding(16.dp) // Add padding to the column
     ) {
         Button(
-            onClick = { onButtonClicked("Hygiene") },
-            modifier = Modifier
-                .fillMaxWidth()
+            onClick = { onButtonClicked("Hygiene") }, modifier = Modifier.fillMaxWidth()
         ) {
             Text("Hygiene")
         }
         Button(
-            onClick = { onButtonClicked("Essen") },
-            modifier = Modifier
-                .fillMaxWidth()
+            onClick = { onButtonClicked("Essen") }, modifier = Modifier.fillMaxWidth()
         ) {
             Text("Essen")
         }
         Button(
-            onClick = { onButtonClicked("Geld") },
-            modifier = Modifier
-                .fillMaxWidth()
+            onClick = { onButtonClicked("Geld") }, modifier = Modifier.fillMaxWidth()
         ) {
             Text("Geld")
         }
         Button(
-            onClick = { onButtonClicked("Gym") },
-            modifier = Modifier
-                .fillMaxWidth()
+            onClick = { onButtonClicked("Gym") }, modifier = Modifier.fillMaxWidth()
         ) {
             Text("Gym")
         }
         Button(
-            onClick = { onButtonClicked("Gym Checklist") },
-            modifier = Modifier
-                .fillMaxWidth()
+            onClick = { onButtonClicked("Gym Checklist") }, modifier = Modifier.fillMaxWidth()
         ) {
             Text("Gym Checklist")
         }
@@ -409,23 +431,18 @@ fun connectInfluxDB(): InfluxDBClientKotlin {
     val bucket = "KotlinAppDev"
 
     return InfluxDBClientKotlinFactory.create(
-        "https://eu-central-1-1.aws.cloud2.influxdata.com",
-        token.toCharArray(),
-        org,
-        bucket
+        "https://eu-central-1-1.aws.cloud2.influxdata.com", token.toCharArray(), org, bucket
     )
 }
 
-suspend fun sendDataPoint(measurement: String, field: String, value: Long?){
+suspend fun sendDataPoint(measurement: String, field: String, value: Long?) {
     val client = connectInfluxDB()
 
-    if(value != null){
+    if (value != null) {
         client.use { influxDBClient ->
             val writeApi = influxDBClient.getWriteKotlinApi()
 
-            val point = Point
-                .measurement(measurement)
-                .addField(field, value)
+            val point = Point.measurement(measurement).addField(field, value)
                 .time(Instant.now(), WritePrecision.NS)
 
             writeApi.writePoint(point)
@@ -461,8 +478,8 @@ fun dailyTask() {
     println("current hour $currentHour")
     println("current minute $currentMinute")
 
-    var delayHours = 0
-    var delayMinutes = 0
+    var delayHours: Int
+    val delayMinutes: Int
 
     if (currentHour > desiredHour || (currentHour == desiredHour && currentMinute >= desiredMinute)) {
         // If the current time has already passed the desired time today,
@@ -482,12 +499,13 @@ fun dailyTask() {
     }
 
     // Calculate the total delay in milliseconds until the next execution
-    val initialDelay = delayHours * 3600000 + delayMinutes * 60000 // hours to milliseconds, minutes to milliseconds
+    val initialDelay =
+        delayHours * 3600000 + delayMinutes * 60000 // hours to milliseconds, minutes to milliseconds
 
     println("Initialized Scheduled Executor")
-    println("First execution in ${delayHours.toString()} Hours")
-    println("First execution in ${delayMinutes.toString()} Minutes")
-    println("First execution in ${initialDelay.toString()} Milliseconds")
+    println("First execution in $delayHours Hours")
+    println("First execution in $delayMinutes Minutes")
+    println("First execution in $initialDelay Milliseconds")
 
     // Schedule the task to execute daily at the desired time
     executor.scheduleAtFixedRate({
