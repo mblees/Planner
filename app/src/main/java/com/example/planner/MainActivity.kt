@@ -449,7 +449,7 @@ fun connectInfluxDB(): InfluxDBClientKotlin {
     val token =
         "E297d7E9DQ8HtitYgfhJyZ0pRcNUUuHETnHWWGta_rXLfST1De_aTt6L4FgORkVRo1u5tpohutP_rHW-lrduWg=="
     val org = "Planer"
-    val bucket = "KotlinAppDev"
+    val bucket = "KotlinApp"
 
     return InfluxDBClientKotlinFactory.create(
         "https://eu-central-1-1.aws.cloud2.influxdata.com", token.toCharArray(), org, bucket
